@@ -1,0 +1,17 @@
+{
+  "name": "clinixpro",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@clinixpro/web",
+    "build": "npm run build --workspaces",
+    "lint": "npm run lint --workspaces"
+  },
+  "dependencies": {
+    "pg": "^8.19.0"
+  }
+}

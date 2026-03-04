@@ -1,0 +1,332 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// Tenants (clinics)
+model Tenant {
+  id                String    @id @default(uuid())
+  name              String
+  subdomain         String    @unique
+  logoUrl           String?
+  settings          Json      @default("{}")
+  subscriptionStatus String   @default("trial")
+  subscriptionPlan  String    @default("basic")
+  trialEndsAt       DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  profiles          Profile[]
+  patients          Patient[]
+  appointments      Appointment[]
+  medicalRecords    MedicalRecord[]
+  invoices          Invoice[]
+  services          Service[]
+  workingHours      WorkingHour[]
+  holidays          Holiday[]
+  auditLogs         AuditLog[]
+  lookups           Lookup[]
+}
+
+// Extended user profiles (linked to Clerk)
+model Profile {
+  id              String    @id // matches Clerk user ID
+  tenantId        String
+  role            String    // admin, doctor, nurse, receptionist, lab_tech
+  fullName        String
+  email           String
+  phone           String?
+  specialization  String?   // for doctors
+  licenseNumber   String?   // for doctors
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  doctorAppointments Appointment[] @relation("doctor_appointments")
+  doctorRecords    MedicalRecord[] @relation("doctor_records")
+  auditLogs       AuditLog[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+}
+
+// Patients
+model Patient {
+  id                  String    @id @default(uuid())
+  tenantId            String
+  mrn                 String    @unique // Medical Record Number
+  fullName            String
+  dateOfBirth         DateTime?
+  gender              String?   // Male, Female, Other
+  phone               String?
+  email               String?
+  address             String?
+  bloodType           String?   // A+, A-, B+, B-, AB+, AB-, O+, O-
+  allergies           String[]  // Array of strings
+  chronicDiseases     String[]  // Array of strings
+  currentMedications  Json?     // Structured medications
+  emergencyContactName String?
+  emergencyContactPhone String?
+  insuranceProvider   String?
+  insurancePolicyNo   String?
+  idType              String?
+  idNumber            String?
+  photoUrl            String?
+  notes               String?
+  isActive            Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  tenant              Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  appointments        Appointment[]
+  medicalRecords      MedicalRecord[]
+  invoices            Invoice[]
+
+  @@unique([tenantId, phone])
+  @@index([tenantId])
+  @@index([mrn])
+}
+
+// Appointments
+model Appointment {
+  id              String    @id @default(uuid())
+  tenantId        String
+  patientId       String
+  doctorId        String?   // Profile ID of doctor
+  appointmentDate DateTime
+  startTime       DateTime // Time only, but stored as DateTime for simplicity
+  endTime         DateTime
+  status          String    // scheduled, confirmed, in-progress, called, completed, cancelled, no-show
+  type            String    // regular, follow-up, emergency, consultation
+  reason          String?
+  notes           String?
+  isVirtual       Boolean   @default(false)
+  videoCallLink   String?
+  reminderSent    Boolean   @default(false)
+  createdBy       String?   // Profile ID
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patient         Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor          Profile?  @relation("doctor_appointments", fields: [doctorId], references: [id])
+  invoice         Invoice?
+  medicalRecord   MedicalRecord?
+
+  @@index([tenantId, appointmentDate])
+  @@index([doctorId, appointmentDate])
+  @@index([patientId])
+}
+
+// Medical Records
+model MedicalRecord {
+  id              String    @id @default(uuid())
+  tenantId        String
+  patientId       String
+  doctorId        String?   // Profile ID of doctor
+  appointmentId   String?   @unique
+  visitDate       DateTime  @default(now())
+  subjective      String?   // Chief complaint, HPI
+  type            String    @default("regular") // regular, follow-up, etc.
+  objective       Json?     // Vital signs, exam findings
+  assessment      Json?     // Diagnosis, ICD-10 codes
+  plan            Json?     // Treatment plan
+  
+  // Professional relations
+  prescriptions   Prescription[]
+  labRequests     LabInvestigation[]
+  
+  attachments     String[]  // URLs to uploaded files (photos of results, etc.)
+  followUpDate    DateTime?
+  isConfidential  Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patient         Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor          Profile?  @relation("doctor_records", fields: [doctorId], references: [id])
+  appointment     Appointment? @relation(fields: [appointmentId], references: [id])
+
+  @@index([patientId, visitDate(sort: Desc)])
+  @@index([tenantId])
+}
+
+// Tenant-specific lookups (Medicines, Labs, etc.)
+model Lookup {
+  id              String    @id @default(uuid())
+  tenantId        String
+  type            String    // MEDICINE, LAB_TEST, RADIOLOGY, ORGAN, DIAGNOSIS
+  name            String
+  description     String?
+  category        String?   // e.g. Antibiotic, Blood Test
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  prescriptions   Prescription[]
+
+  @@unique([tenantId, type, name])
+  @@index([tenantId, type])
+}
+
+// Structured Prescriptions
+model Prescription {
+  id              String    @id @default(uuid())
+  medicalRecordId String
+  lookupId        String?   // Optional link to master medicine
+  medicineName    String    // Fallback or custom name
+  dosage          String?
+  frequency       String?
+  duration        String?
+  instructions    String?
+  createdAt       DateTime  @default(now())
+
+  // Relations
+  medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
+  lookup          Lookup?       @relation(fields: [lookupId], references: [id])
+
+  @@index([medicalRecordId])
+}
+
+// Lab Investigations
+model LabInvestigation {
+  id              String    @id @default(uuid())
+  medicalRecordId String
+  lookupId        String?   // Link to master investigation catalog
+  testName        String
+  type            String    @default("LAB") // LAB, RADIOLOGY
+  targetOrgan     String?   // For Radiology
+  priority        String    @default("routine") // routine, urgent, stat
+  status          String    @default("pending") // pending, completed, cancelled
+  notes           String?
+  results         String?   // Textual summary of results
+  resultImageUrls String[]  // Photos of physical results
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
+
+  @@index([medicalRecordId])
+}
+
+// Invoices
+model Invoice {
+  id              String    @id @default(uuid())
+  tenantId        String
+  patientId       String
+  appointmentId   String?   @unique
+  invoiceNumber   String    @unique
+  issueDate       DateTime
+  dueDate         DateTime
+  items           Json      // Array of invoice items
+  subtotal        Float
+  tax             Float     @default(0)
+  discount        Float     @default(0)
+  total           Float
+  paidAmount      Float     @default(0)
+  status          String    // draft, sent, partially_paid, paid, overdue, cancelled
+  paymentMethod   String?   // cash, card, insurance, bank_transfer
+  paymentDate     DateTime?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patient         Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  appointment     Appointment? @relation(fields: [appointmentId], references: [id])
+
+  @@index([tenantId, status])
+  @@index([patientId])
+  @@index([invoiceNumber])
+}
+
+// Services (clinic's service catalog)
+model Service {
+  id              String    @id @default(uuid())
+  tenantId        String
+  name            String
+  description     String?
+  duration        Int       // in minutes
+  price           Float
+  taxRate         Float     @default(0)
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, name])
+}
+
+// Working Hours
+model WorkingHour {
+  id              String    @id @default(uuid())
+  tenantId        String
+  dayOfWeek       Int       // 0-6 (Sunday-Saturday)
+  isWorking       Boolean   @default(true)
+  startTime       String?   // "09:00"
+  endTime         String?   // "17:00"
+  breakStart      String?
+  breakEnd        String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, dayOfWeek])
+}
+
+// Holidays
+model Holiday {
+  id              String    @id @default(uuid())
+  tenantId        String
+  name            String
+  date            DateTime
+  isRecurring     Boolean   @default(false) // yearly holiday
+  createdAt       DateTime  @default(now())
+
+  // Relations
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, date])
+}
+
+// Audit Logs
+model AuditLog {
+  id              String    @id @default(uuid())
+  tenantId        String
+  userId          String?   // Profile ID
+  action          String    // CREATE, UPDATE, DELETE, VIEW
+  entityType      String    // Patient, Appointment, etc.
+  entityId        String?
+  oldValues       Json?
+  newValues       Json?
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime  @default(now())
+
+  // Relations
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user            Profile?  @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, createdAt(sort: Desc)])
+}
