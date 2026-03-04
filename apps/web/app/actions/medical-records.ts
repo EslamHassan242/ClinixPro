@@ -21,7 +21,7 @@ export async function createMedicalRecord(data: any) {
     const tenantId = await getTenantId();
     const { prescriptions, labRequests, radiologyRequests, appointmentId, ...recordData } = data;
 
-    const record = await prisma.$transaction(async (tx) => {
+    const record = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
         // 1. Create the medical record
         const newRecord = await tx.medicalRecord.create({
             data: {
