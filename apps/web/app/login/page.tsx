@@ -9,21 +9,41 @@ import { toast } from "sonner";
 
 import { getPostLoginRedirect } from "./action";
 
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+const loginSchema = z.object({
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
+
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+        email: "",
+        password: "",
+    }
+  });
+
+  const onSubmit = async (values: LoginFormValues) => {
     setIsLoading(true);
 
     try {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: values.email,
+        password: values.password,
       });
 
       if (error) throw error;
@@ -53,35 +73,37 @@ export default function LoginPage() {
         </div>
 
         <div className="bg-white p-8 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Email Address</label>
               <div className="relative group">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-primary transition-colors" />
+                <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors ${errors.email ? 'text-red-400' : 'text-slate-300 group-focus-within:text-primary'}`} />
                 <input
                   type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-primary/20 focus:outline-none font-bold text-slate-700 transition-all"
+                  {...register("email")}
+                  className={`w-full pl-12 pr-4 py-4 bg-slate-50 border-2 rounded-2xl focus:bg-white focus:outline-none font-bold text-slate-700 transition-all ${
+                    errors.email ? 'border-red-200 focus:border-red-300' : 'border-transparent focus:border-primary/20'
+                  }`}
                   placeholder="doctor@clinixpro.com"
                 />
               </div>
+              {errors.email && <p className="text-[10px] font-black text-red-500 ml-1 uppercase">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Password</label>
               <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-300 group-focus-within:text-primary transition-colors" />
+                <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 transition-colors ${errors.password ? 'text-red-400' : 'text-slate-300 group-focus-within:text-primary'}`} />
                 <input
                   type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-transparent rounded-2xl focus:bg-white focus:border-primary/20 focus:outline-none font-bold text-slate-700 transition-all"
+                  {...register("password")}
+                  className={`w-full pl-12 pr-4 py-4 bg-slate-50 border-2 rounded-2xl focus:bg-white focus:outline-none font-bold text-slate-700 transition-all ${
+                    errors.password ? 'border-red-200 focus:border-red-300' : 'border-transparent focus:border-primary/20'
+                  }`}
                   placeholder="••••••••"
                 />
               </div>
+              {errors.password && <p className="text-[10px] font-black text-red-500 ml-1 uppercase">{errors.password.message}</p>}
             </div>
 
             <button

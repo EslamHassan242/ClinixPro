@@ -32,10 +32,20 @@ export function AttachmentManager({ onUpdate, initialUrls = [] }: { onUpdate: (u
     
     try {
         const { uploadMedicalFile } = await import("@/lib/supabase");
+        const { compressImage } = await import("@/lib/image-utils");
         
         for (let i = 0; i < files.length; i++) {
-            const file = files[i];
+            let file = files[i];
             const id = Math.random().toString(36).substr(2, 9);
+            
+            // Compress image if applicable
+            if (file.type.startsWith('image/')) {
+                try {
+                    file = await compressImage(file);
+                } catch (e) {
+                    console.warn("Compression failed, uploading original:", e);
+                }
+            }
             
             // Upload to Supabase Storage
             const publicUrl = await uploadMedicalFile(file, "records");
