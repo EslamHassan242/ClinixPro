@@ -7,6 +7,8 @@ import { Activity, Loader2, Mail, Lock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
+import { getPostLoginRedirect } from "./action";
+
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -26,7 +28,9 @@ export default function LoginPage() {
 
       if (error) throw error;
 
-      router.push("/dashboard");
+      // Intelligent redirect based on profile status
+      const redirectPath = await getPostLoginRedirect();
+      router.push(redirectPath);
       router.refresh();
     } catch (error: any) {
       toast.error(error.message || "Invalid login credentials");
