@@ -1,23 +1,8 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@clinixpro/database";
 import { redirect } from "next/navigation";
-
-async function getTenantId() {
-    const { userId } = await auth();
-    if (!userId) throw new Error("Unauthorized");
-
-    const profile = await prisma.profile.findUnique({
-        where: { id: userId },
-        select: { tenantId: true },
-    });
-
-    if (!profile) {
-        redirect("/onboarding");
-    }
-    return profile.tenantId;
-}
+import { getTenantId } from "@/lib/auth-utils";
 
 export async function getDashboardStats() {
     const tenantId = await getTenantId();

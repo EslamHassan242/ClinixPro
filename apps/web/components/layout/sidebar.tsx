@@ -19,9 +19,11 @@ import {
 
 interface SidebarProps {
   role: "admin" | "doctor" | "nurse" | "receptionist" | "lab_tech";
+  onItemClick?: () => void;
 }
 
 const navigations = {
+// ... existing navigations constant
   admin: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Live Queue", href: "/dashboard/queue", icon: Activity },
@@ -61,14 +63,18 @@ const navigations = {
   ],
 };
 
-export function Sidebar({ role }: SidebarProps) {
+export function Sidebar({ role, onItemClick }: SidebarProps) {
   const pathname = usePathname();
   const menuItems = navigations[role] || navigations.receptionist;
 
   return (
     <div className="flex h-full w-64 flex-col border-r bg-white">
       <div className="flex h-16 items-center border-b px-6">
-        <Link href="/dashboard" className="flex items-center gap-2 font-bold text-primary">
+        <Link 
+          href="/dashboard" 
+          className="flex items-center gap-2 font-bold text-primary"
+          onClick={onItemClick}
+        >
           <Activity className="h-6 w-6" />
           <span className="text-xl">ClinixPro</span>
         </Link>
@@ -81,6 +87,7 @@ export function Sidebar({ role }: SidebarProps) {
               <Link
                 key={item.name}
                 href={item.href}
+                onClick={onItemClick}
                 className={cn(
                   "group flex items-center rounded-xl px-4 py-3 text-sm font-bold transition-all duration-200",
                   isActive

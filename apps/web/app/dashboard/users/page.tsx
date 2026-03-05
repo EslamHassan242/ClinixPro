@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { Plus, Search, MoreVertical, Mail, Phone, ShieldCheck, UserCog } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@clinixpro/database";
-import { redirect } from "next/navigation";
+import { getUserProfile } from "@/lib/auth-utils";
 import CredentialsBanner from "./credentials-banner";
 import StaffClient from "./staff-client";
 
@@ -16,14 +15,7 @@ const roleColors: Record<string, string> = {
 };
 
 async function getStaffMembers() {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
-
-  const profile = await prisma.profile.findUnique({
-    where: { id: userId },
-    select: { tenantId: true },
-  });
-  if (!profile) redirect("/onboarding");
+  const profile = await getUserProfile();
 
   const staff = await prisma.profile.findMany({
     where: { tenantId: profile.tenantId },

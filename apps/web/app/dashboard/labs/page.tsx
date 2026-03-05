@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { Plus, Search, Microscope, Clock, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@clinixpro/database";
-import { redirect } from "next/navigation";
+import { getUserProfile } from "@/lib/auth-utils";
 
 const statusStyles: Record<string, { icon: React.ElementType; class: string; label: string }> = {
   pending: { icon: Clock, class: "bg-yellow-50 text-yellow-700 ring-yellow-200", label: "Pending" },
@@ -14,14 +13,7 @@ const statusStyles: Record<string, { icon: React.ElementType; class: string; lab
 };
 
 async function getLabTests() {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
-
-  const profile = await prisma.profile.findUnique({
-    where: { id: userId },
-    select: { tenantId: true },
-  });
-  if (!profile) redirect("/onboarding");
+  const profile = await getUserProfile();
 
   // In the current schema, LabInvestigations are linked to medicalRecords
   const labs = await prisma.labInvestigation.findMany({

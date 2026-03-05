@@ -5,7 +5,9 @@ import { onboardClinic } from "@/app/actions/onboarding";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Building2, Globe, ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
-import { UserButton } from "@clerk/nextjs";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -26,6 +28,14 @@ function SubmitButton() {
 
 export default function OnboardingForm() {
   const [error, setError] = useState<Record<string, string[]>>({});
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
 
   async function clientAction(formData: FormData) {
     setError({});
@@ -39,7 +49,12 @@ export default function OnboardingForm() {
     <div className="min-h-screen bg-slate-50 relative flex items-center justify-center p-4">
       {/* Absolute Header for Sign Out */}
       <div className="absolute top-6 right-6">
-        <UserButton afterSignOutUrl="/sign-in" />
+        <button 
+          onClick={handleSignOut}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 text-slate-600 hover:text-red-500 hover:bg-red-50 transition-all font-bold text-xs uppercase tracking-tight shadow-sm"
+        >
+          <LogOut className="h-4 w-4" /> Sign Out
+        </button>
       </div>
 
       <div className="max-w-md w-full space-y-8">

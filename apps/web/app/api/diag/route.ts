@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@clinixpro/database";
 
 export async function GET() {
@@ -7,17 +7,19 @@ export async function GET() {
         timestamp: new Date().toISOString(),
         env: {
             has_db_url: !!process.env.DATABASE_URL,
-            has_clerk_pub: !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
-            has_clerk_secret: !!process.env.CLERK_SECRET_KEY,
+            has_supabase_url: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
+            has_supabase_anon: !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+            has_supabase_service: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
             node_env: process.env.NODE_ENV,
         }
     };
 
     try {
-        const { userId } = await auth();
-        diag.clerk = { status: "ok", userId };
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+        diag.supabase_auth = { status: "ok", userId: user?.id || null };
     } catch (e: any) {
-        diag.clerk = { status: "error", message: e.message };
+        diag.supabase_auth = { status: "error", message: e.message };
     }
 
     try {

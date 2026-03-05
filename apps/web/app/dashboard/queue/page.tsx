@@ -1,20 +1,8 @@
-import { auth } from "@clerk/nextjs/server";
-import { prisma } from "@clinixpro/database";
-import { redirect } from "next/navigation";
+import { getUserProfile } from "@/lib/auth-utils";
 import { QueueManager } from "@/components/medical/queue-manager";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Users, Clock, Activity } from "lucide-react";
 
 export default async function QueuePage() {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
-
-  const profile = await prisma.profile.findUnique({
-    where: { id: userId },
-    select: { role: true, tenantId: true },
-  });
-
-  if (!profile) redirect("/onboarding");
+  const profile = await getUserProfile();
 
   return (
     <div className="space-y-8 pb-20">

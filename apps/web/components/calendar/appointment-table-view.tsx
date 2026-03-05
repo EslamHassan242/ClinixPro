@@ -51,49 +51,51 @@ export function AppointmentTableClient({ initialAppointments, doctors }: Appoint
 
   return (
     <div className="space-y-6">
-      <div className="bg-white p-6 rounded-3xl shadow-xl ring-1 ring-slate-200 space-y-6">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-           <div className="relative flex-1 max-w-md">
+      <div className="bg-white p-4 sm:p-6 rounded-3xl shadow-xl ring-1 ring-slate-200 space-y-6">
+        <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+           <div className="relative w-full xl:max-w-md">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input 
                 type="text"
                 placeholder="Search patient name or phone..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 border-none rounded-2xl text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all outline-none"
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all outline-none"
               />
            </div>
            
-           <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border">
-                 <button onClick={() => setDateRange("today")} className={cn("px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all", dateRange === "today" ? "bg-white shadow-sm text-primary" : "text-slate-400 hover:text-slate-600")}>Today</button>
-                 <button onClick={() => setDateRange("week")} className={cn("px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all", dateRange === "week" ? "bg-white shadow-sm text-primary" : "text-slate-400 hover:text-slate-600")}>Week</button>
-                 <button onClick={() => setDateRange("month")} className={cn("px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all", dateRange === "month" ? "bg-white shadow-sm text-primary" : "text-slate-400 hover:text-slate-600")}>Month</button>
+           <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
+              <div className="flex items-center justify-center gap-2 bg-slate-50 p-1 rounded-2xl border border-slate-100 min-w-max">
+                 <button onClick={() => setDateRange("today")} className={cn("flex-1 md:flex-none px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all", dateRange === "today" ? "bg-white shadow-sm text-primary" : "text-slate-400 hover:text-slate-600")}>Today</button>
+                 <button onClick={() => setDateRange("week")} className={cn("flex-1 md:flex-none px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all", dateRange === "week" ? "bg-white shadow-sm text-primary" : "text-slate-400 hover:text-slate-600")}>Week</button>
+                 <button onClick={() => setDateRange("month")} className={cn("flex-1 md:flex-none px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all", dateRange === "month" ? "bg-white shadow-sm text-primary" : "text-slate-400 hover:text-slate-600")}>Month</button>
               </div>
 
-              <select 
-                value={selectedDoctor}
-                onChange={(e) => setSelectedDoctor(e.target.value)}
-                className="bg-slate-50 border-none rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-widest text-slate-600 focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
-              >
-                 <option value="all">All Doctors</option>
-                 {doctors.map(doc => (
-                   <option key={doc.id} value={doc.id}>{doc.fullName}</option>
-                 ))}
-              </select>
+              <div className="flex flex-col sm:flex-row items-stretch gap-3 flex-1">
+                <select 
+                  value={selectedDoctor}
+                  onChange={(e) => setSelectedDoctor(e.target.value)}
+                  className="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-600 focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer flex-1"
+                >
+                   <option value="all">All Doctors</option>
+                   {doctors.map(doc => (
+                     <option key={doc.id} value={doc.id}>{doc.fullName}</option>
+                   ))}
+                </select>
 
-              <select 
-                value={selectedStatus}
-                onChange={(e) => setSelectedStatus(e.target.value)}
-                className="bg-slate-50 border-none rounded-2xl px-4 py-2.5 text-xs font-black uppercase tracking-widest text-slate-600 focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer"
-              >
-                 <option value="all">Any Status</option>
-                 <option value="scheduled">Scheduled</option>
-                 <option value="waiting">Waiting</option>
-                 <option value="called">Called</option>
-                 <option value="completed">Completed</option>
-                 <option value="cancelled">Cancelled</option>
-              </select>
+                <select 
+                  value={selectedStatus}
+                  onChange={(e) => setSelectedStatus(e.target.value)}
+                  className="bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 text-[10px] font-black uppercase tracking-widest text-slate-600 focus:ring-2 focus:ring-primary/20 outline-none cursor-pointer flex-1"
+                >
+                   <option value="all">Any Status</option>
+                   <option value="scheduled">Scheduled</option>
+                   <option value="waiting">Waiting</option>
+                   <option value="called">Called</option>
+                   <option value="completed">Completed</option>
+                   <option value="cancelled">Cancelled</option>
+                </select>
+              </div>
            </div>
         </div>
       </div>

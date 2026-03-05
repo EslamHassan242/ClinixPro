@@ -1,6 +1,6 @@
 "use server";
 
-import { auth, currentUser } from "@clerk/nextjs/server";
+import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@clinixpro/database";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -11,10 +11,10 @@ const onboardingSchema = z.object({
 });
 
 export async function onboardClinic(formData: FormData) {
-    const { userId } = await auth();
-    const user = await currentUser();
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
 
-    if (!userId || !user) {
+    if (!user) {
         return { error: { _form: ["You must be signed in to complete onboarding."] } };
     }
 
@@ -53,26 +53,15 @@ export async function onboardClinic(formData: FormData) {
 
             const profile = await tx.profile.create({
                 data: {
-                    id: userId,
+                    id: user.id,
                     tenantId: tenant.id,
                     role: "admin",
-                    email: user.emailAddresses[0].emailAddress,
-                    fullName: `${user.firstName || ""} ${user.lastName || ""}`.trim(),
+                    email: user.email!,
+                    fullName: user.user_metadata.full_name || user.email?.split('@')[0] || "Admin",
                 },
             });
 
             return { tenant, profile };
-        });
-
-        // 3. Mark user as onboarded in Clerk metadata so middleware can instantly detect it
-        const { clerkClient } = await import("@clerk/nextjs/server");
-        const clerk = await clerkClient();
-        await clerk.users.updateUser(userId, {
-            publicMetadata: {
-                onboarded: true,
-                tenantId: result.tenant.id,
-                role: "admin",
-            },
         });
 
         console.log("Clinic onboarded:", result);
@@ -85,11 +74,13 @@ export async function onboardClinic(formData: FormData) {
 }
 
 export async function checkOnboardingStatus() {
-    const { userId } = await auth();
-    if (!userId) return null;
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) return null;
 
     const profile = await prisma.profile.findUnique({
-        where: { id: userId },
+        where: { id: user.id },
         include: { tenant: true },
     });
 

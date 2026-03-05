@@ -1,18 +1,9 @@
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@clinixpro/database";
-import { redirect } from "next/navigation";
+import { getUserProfile } from "@/lib/auth-utils";
 import NewAppointmentClient from "./appointment-client";
 
 export default async function NewAppointmentPage() {
-  const { userId } = await auth();
-  if (!userId) redirect("/sign-in");
-
-  const profile = await prisma.profile.findUnique({
-    where: { id: userId },
-    select: { tenantId: true },
-  });
-
-  if (!profile) redirect("/onboarding");
+  const profile = await getUserProfile();
 
   // Fetch doctors (any profile with role 'doctor')
   const doctors = await prisma.profile.findMany({

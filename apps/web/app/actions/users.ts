@@ -1,9 +1,9 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
-import { clerkClient } from "@clerk/nextjs/server";
 import { prisma } from "@clinixpro/database";
 import { redirect } from "next/navigation";
+import { createAdminClient } from "@/lib/supabase/server";
+import { getUserProfile } from "@/lib/auth-utils";
 
 function generatePassword() {
     // Generate a strong 12-char password: letters + numbers + symbol
@@ -16,15 +16,8 @@ function generatePassword() {
 }
 
 export async function createStaffMember(formData: FormData) {
-    const { userId } = await auth();
-    if (!userId) throw new Error("Unauthorized");
+    const adminProfile = await getUserProfile();
 
-    const adminProfile = await prisma.profile.findUnique({
-        where: { id: userId },
-        select: { tenantId: true, role: true },
-    });
-
-    if (!adminProfile) throw new Error("No admin profile found");
     if (adminProfile.role !== "admin") throw new Error("Only admins can add staff members");
 
     const fullName = formData.get("fullName") as string;
@@ -46,22 +39,29 @@ export async function createStaffMember(formData: FormData) {
     }
 
     const tempPassword = generatePassword();
-    const [firstName, ...rest] = fullName.trim().split(" ");
-    const lastName = rest.join(" ") || "-";
 
-    // Create real Clerk user account
-    const clerk = await clerkClient();
-    const clerkUser = await clerk.users.createUser({
-        emailAddress: [email],
+    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing in .env. Automated user creation requires the Service Role Key.");
+    }
+
+    // Create real Supabase user account
+    const supabaseAdmin = await createAdminClient();
+    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+        email: email,
         password: tempPassword,
-        firstName,
-        lastName,
+        email_confirm: true,
+        user_metadata: {
+            full_name: fullName,
+            role: role,
+        }
     });
 
-    // Create DB profile linked to the real Clerk user ID
+    if (authError) throw authError;
+
+    // Create DB profile linked to the Supabase user ID
     await prisma.profile.create({
         data: {
-            id: clerkUser.id,
+            id: authUser.user.id,
             tenantId: adminProfile.tenantId,
             role: role as any,
             fullName,
@@ -76,19 +76,10 @@ export async function createStaffMember(formData: FormData) {
 }
 
 export async function updateStaffMember(id: string, data: { fullName: string; role: string; phone?: string; specialization?: string; isActive: boolean }) {
-    const { userId } = await auth();
-    if (!userId) throw new Error("Unauthorized");
+    const adminProfile = await getUserProfile();
 
-    const adminProfile = await prisma.profile.findUnique({
-        where: { id: userId },
-        select: { tenantId: true, role: true },
-    });
-
-    if (!adminProfile) throw new Error("No admin profile found");
-    // Removing the strict 'admin' check here if you want managers to edit, but for now we'll keep it or let anyone with access to the page edit.
     if (adminProfile.role !== "admin") throw new Error("Only admins can edit staff members");
 
-    // We only update the DB profile. We could also update Clerk if we wanted to sync the name.
     const updated = await prisma.profile.update({
         where: { id, tenantId: adminProfile.tenantId },
         data: {
@@ -101,34 +92,25 @@ export async function updateStaffMember(id: string, data: { fullName: string; ro
     });
 
     try {
-        const clerk = await clerkClient();
-        const [firstName, ...rest] = data.fullName.trim().split(" ");
-        await clerk.users.updateUser(id, {
-            firstName,
-            lastName: rest.join(" ") || undefined,
-        });
+        if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            const supabaseAdmin = await createAdminClient();
+            await supabaseAdmin.auth.admin.updateUserById(id, {
+                user_metadata: { full_name: data.fullName }
+            });
+        }
     } catch (e) {
-        console.error("Failed to sync name to Clerk, but DB was updated", e);
+        console.error("Failed to sync name to Supabase, but DB was updated", e);
     }
 
-    // Refresh the page
     return updated;
 }
 
 export async function getDoctors() {
-    const { userId } = await auth();
-    if (!userId) throw new Error("Unauthorized");
-
-    const userProfile = await prisma.profile.findUnique({
-        where: { id: userId },
-        select: { tenantId: true },
-    });
-
-    if (!userProfile) throw new Error("No profile found");
+    const profile = await getUserProfile();
 
     return await prisma.profile.findMany({
         where: {
-            tenantId: userProfile.tenantId,
+            tenantId: profile.tenantId,
             role: "doctor",
             isActive: true
         },

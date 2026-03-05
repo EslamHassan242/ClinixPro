@@ -20,17 +20,17 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8 pb-12">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-black tracking-tight text-foreground">Clinic Overview</h2>
-          <p className="text-muted-foreground font-medium italic">Performance analytics and recent activities for your practice.</p>
+          <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground">Clinic Overview</h2>
+          <p className="text-muted-foreground font-medium italic text-xs sm:text-sm">Performance analytics and recent activities for your practice.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <Link href="/dashboard/patients/new" className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-2.5 text-xs font-black uppercase tracking-widest text-white hover:brightness-110 shadow-lg shadow-primary/20 transition-all active:scale-95">
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <Link href="/dashboard/patients/new" className="inline-flex items-center justify-center rounded-lg bg-primary px-6 py-2.5 text-xs font-black uppercase tracking-widest text-white hover:brightness-110 shadow-lg shadow-primary/20 transition-all active:scale-95 w-full sm:w-auto">
             <UserPlus className="mr-2 h-4 w-4" />
             Add Patient
           </Link>
-          <Link href="/dashboard/appointments/new" className="inline-flex items-center justify-center rounded-lg border border-border bg-card px-6 py-2.5 text-xs font-black uppercase tracking-widest text-foreground/70 hover:bg-muted shadow-sm transition-all active:scale-95">
+          <Link href="/dashboard/appointments/new" className="inline-flex items-center justify-center rounded-lg border border-border bg-card px-6 py-2.5 text-xs font-black uppercase tracking-widest text-foreground/70 hover:bg-muted shadow-sm transition-all active:scale-95 w-full sm:w-auto">
             <Calendar className="mr-2 h-4 w-4" />
             Book Visit
           </Link>

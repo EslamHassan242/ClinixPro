@@ -14,14 +14,14 @@ export default async function PatientsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">Patients Registry</h2>
-          <p className="text-muted-foreground italic text-sm">Manage patient records, medical history, and clinical documentation.</p>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Patients Registry</h2>
+          <p className="text-muted-foreground italic text-xs sm:text-sm">Manage patient records, medical history, and clinical documentation.</p>
         </div>
         <Link 
           href="/dashboard/patients/new"
-          className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 shadow-md transition-all active:scale-95"
+          className="inline-flex items-center justify-center rounded-lg bg-primary px-4 py-2.5 sm:px-6 text-xs font-black uppercase tracking-widest text-white hover:brightness-110 shadow-lg shadow-primary/20 transition-all active:scale-95 w-full sm:w-auto"
         >
           <Plus className="mr-2 h-4 w-4" />
           Add New Patient
@@ -29,9 +29,9 @@ export default async function PatientsPage({
       </div>
 
       <Card className="border-none shadow-xl ring-1 ring-slate-200">
-        <CardHeader className="bg-slate-50/50 border-b">
-          <div className="flex items-center justify-between">
-            <div className="relative w-full max-w-sm">
+        <CardHeader className="bg-slate-50/50 border-b p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+            <div className="relative w-full max-w-sm order-2 sm:order-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
               <form action="">
                  <input 
@@ -39,15 +39,15 @@ export default async function PatientsPage({
                   defaultValue={query}
                   type="search" 
                   placeholder="ID, Name, or Contact..." 
-                  className="w-full rounded-lg border-slate-200 bg-white pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  className="w-full rounded-lg border-slate-200 bg-white pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all border shadow-sm"
                  />
               </form>
             </div>
-            <div className="flex gap-2">
-              <button className="inline-flex items-center rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">
+            <div className="flex items-center gap-2 order-1 sm:order-2">
+              <button className="flex-1 sm:flex-none inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">
                 <Filter className="mr-2 h-4 w-4 text-slate-500" /> Filters
               </button>
-              <button className="inline-flex items-center rounded-md border border-slate-200 bg-white px-3 py-2 text-sm font-medium hover:bg-slate-50 transition-colors">
+              <button className="flex-1 sm:flex-none inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 transition-colors shadow-sm">
                 <Download className="mr-2 h-4 w-4 text-slate-500" /> Export
               </button>
             </div>

@@ -1,21 +1,8 @@
 "use server";
 
-import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@clinixpro/database";
 import { revalidatePath } from "next/cache";
-
-async function getTenantId() {
-    const { userId } = await auth();
-    if (!userId) throw new Error("Unauthorized");
-
-    const profile = await prisma.profile.findUnique({
-        where: { id: userId },
-        select: { tenantId: true },
-    });
-
-    if (!profile) throw new Error("No profile found");
-    return profile.tenantId;
-}
+import { getTenantId } from "@/lib/auth-utils";
 
 export async function getServices() {
     const tenantId = await getTenantId();

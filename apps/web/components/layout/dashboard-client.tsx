@@ -1,16 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, X, Activity } from "lucide-react";
+import { Menu, X, Activity, LogOut, User as UserIcon, Settings as SettingsIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sidebar } from "@/components/layout/sidebar";
-import { UserButton } from "@clerk/nextjs";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export function DashboardClient({ profile, role, children }: { profile: any, role: string, children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const router = useRouter();
+  const supabase = createClient();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/login");
+    router.refresh();
+  };
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 overflow-hidden text-slate-900">
       {/* Desktop Sidebar */}
       <div className="hidden lg:block">
         <Sidebar role={role as any} />
@@ -38,7 +56,7 @@ export function DashboardClient({ profile, role, children }: { profile: any, rol
               <X className="h-6 w-6" />
            </button>
         </div>
-        <Sidebar role={role as any} />
+        <Sidebar role={role as any} onItemClick={() => setIsSidebarOpen(false)} />
       </div>
 
       <div className="flex flex-1 flex-col overflow-hidden relative">
@@ -60,7 +78,38 @@ export function DashboardClient({ profile, role, children }: { profile: any, rol
                 <span className="text-[10px] font-black uppercase text-slate-400 leading-none">Logged in as</span>
                 <span className="text-xs font-bold text-slate-700 leading-tight">{profile.fullName}</span>
              </div>
-             <UserButton afterSignOutUrl="/" />
+             
+             <DropdownMenu>
+              <DropdownMenuTrigger className="focus:outline-none">
+                <Avatar className="h-9 w-9 border-2 border-slate-100 hover:border-primary/20 transition-colors shadow-sm cursor-pointer">
+                  <AvatarFallback className="bg-primary/5 text-primary text-xs font-black uppercase">
+                    {profile.fullName.substring(0, 2)}
+                  </AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl shadow-2xl border-slate-100 animate-in slide-in-from-top-2 duration-200">
+                <DropdownMenuLabel className="px-3 py-2">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-black text-slate-900">{profile.fullName}</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{role}</span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator className="my-1 bg-slate-50" />
+                <DropdownMenuItem className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 focus:bg-slate-50 focus:text-primary cursor-pointer transition-colors font-bold text-xs uppercase tracking-tight">
+                  <UserIcon className="h-4 w-4" /> Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 focus:bg-slate-50 focus:text-primary cursor-pointer transition-colors font-bold text-xs uppercase tracking-tight">
+                  <SettingsIcon className="h-4 w-4" /> Layout Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="my-1 bg-slate-50" />
+                <DropdownMenuItem 
+                  onClick={handleSignOut}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-red-500 focus:bg-red-50 focus:text-red-600 cursor-pointer transition-colors font-black text-xs uppercase tracking-tight"
+                >
+                  <LogOut className="h-4 w-4" /> Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+             </DropdownMenu>
           </div>
         </header>
 
