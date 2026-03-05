@@ -26,8 +26,19 @@ export default function InviteStaffPage() {
     setError("");
     const formData = new FormData(e.currentTarget);
     try {
-      await createStaffMember(formData);
-      router.push("/dashboard/users");
+      const result = await createStaffMember(formData);
+      
+      if (result?.error) {
+        setError(result.error);
+        return;
+      }
+
+      if (result?.success && result.credentials) {
+        const { email, password, fullName } = result.credentials;
+        router.push(`/dashboard/users?created=1&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&name=${encodeURIComponent(fullName)}`);
+      } else {
+        router.push("/dashboard/users");
+      }
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
     } finally {

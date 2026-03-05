@@ -16,63 +16,75 @@ function generatePassword() {
 }
 
 export async function createStaffMember(formData: FormData) {
-    const adminProfile = await getUserProfile();
+    try {
+        const adminProfile = await getUserProfile();
 
-    if (adminProfile.role !== "admin") throw new Error("Only admins can add staff members");
+        if (adminProfile.role !== "admin") throw new Error("Only admins can add staff members");
 
-    const fullName = formData.get("fullName") as string;
-    const email = formData.get("email") as string;
-    const phone = (formData.get("phone") as string) || null;
-    const role = formData.get("role") as string;
-    const specialization = (formData.get("specialization") as string) || null;
+        const fullName = formData.get("fullName") as string;
+        const email = formData.get("email") as string;
+        const phone = (formData.get("phone") as string) || null;
+        const role = formData.get("role") as string;
+        const specialization = (formData.get("specialization") as string) || null;
 
-    if (!fullName || !email || !role) {
-        throw new Error("Full name, email, and role are required");
-    }
-
-    // Check for duplicate email in this tenant
-    const existing = await prisma.profile.findFirst({
-        where: { email, tenantId: adminProfile.tenantId },
-    });
-    if (existing) {
-        throw new Error("A staff member with this email already exists");
-    }
-
-    const tempPassword = generatePassword();
-
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing in .env. Automated user creation requires the Service Role Key.");
-    }
-
-    // Create real Supabase user account
-    const supabaseAdmin = await createAdminClient();
-    const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-        email: email,
-        password: tempPassword,
-        email_confirm: true,
-        user_metadata: {
-            full_name: fullName,
-            role: role,
+        if (!fullName || !email || !role) {
+            throw new Error("Full name, email, and role are required");
         }
-    });
 
-    if (authError) throw authError;
+        // Check for duplicate email in this tenant
+        const existing = await prisma.profile.findFirst({
+            where: { email, tenantId: adminProfile.tenantId },
+        });
+        if (existing) {
+            throw new Error("A staff member with this email already exists");
+        }
 
-    // Create DB profile linked to the Supabase user ID
-    await prisma.profile.create({
-        data: {
-            id: authUser.user.id,
-            tenantId: adminProfile.tenantId,
-            role: role as any,
-            fullName,
-            email,
-            phone,
-            specialization,
-        },
-    });
+        const tempPassword = generatePassword();
 
-    // Return credentials to show to admin (encoded in redirect URL as query params)
-    redirect(`/dashboard/users?created=1&email=${encodeURIComponent(email)}&password=${encodeURIComponent(tempPassword)}&name=${encodeURIComponent(fullName)}`);
+        if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing in .env. Automated user creation requires the Service Role Key.");
+        }
+
+        // Create real Supabase user account
+        const supabaseAdmin = await createAdminClient();
+        const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
+            email: email,
+            password: tempPassword,
+            email_confirm: true,
+            user_metadata: {
+                full_name: fullName,
+                role: role,
+            }
+        });
+
+        if (authError) throw authError;
+
+        // Create DB profile linked to the Supabase user ID
+        await prisma.profile.create({
+            data: {
+                id: authUser.user.id,
+                tenantId: adminProfile.tenantId,
+                role: role as any,
+                fullName,
+                email,
+                phone,
+                specialization,
+            },
+        });
+
+        // Return credentials to be handled by the client
+        return {
+            success: true,
+            credentials: {
+                email,
+                password: tempPassword,
+                fullName
+            }
+        };
+    } catch (error: any) {
+        console.error("Create staff error:", error);
+        return { error: error.message || "Failed to create staff member" };
+    }
 }
 
 export async function updateStaffMember(id: string, data: { fullName: string; role: string; phone?: string; specialization?: string; isActive: boolean }) {
