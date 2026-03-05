@@ -28,6 +28,7 @@ export async function createStaffMember(formData: FormData) {
 
         const fullName = formData.get("fullName") as string;
         const email = formData.get("email") as string;
+        const password = formData.get("password") as string;
         const phone = (formData.get("phone") as string) || null;
         const role = formData.get("role") as string;
         const specialization = (formData.get("specialization") as string) || null;
@@ -44,11 +45,11 @@ export async function createStaffMember(formData: FormData) {
             return { error: "A staff member with this email already exists" };
         }
 
-        const tempPassword = generatePassword();
+        const finalPassword = password || generatePassword();
 
         if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
             console.error("CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing");
-            return { error: "Server configuration error. Please contact support." };
+            return { error: "Server configuration error (missing Service Role Key). Please add it to your .env file." };
         }
 
         // Create real Supabase user account
@@ -56,7 +57,7 @@ export async function createStaffMember(formData: FormData) {
         const supabaseAdmin = await createAdminClient();
         const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email: email,
-            password: tempPassword,
+            password: finalPassword,
             email_confirm: true,
             user_metadata: {
                 full_name: fullName,
@@ -89,7 +90,7 @@ export async function createStaffMember(formData: FormData) {
             success: true,
             credentials: {
                 email,
-                password: tempPassword,
+                password: finalPassword,
                 fullName
             }
         };

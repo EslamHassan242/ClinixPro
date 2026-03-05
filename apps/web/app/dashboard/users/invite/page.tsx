@@ -83,6 +83,10 @@ export default function InviteStaffPage() {
                 <input name="email" type="email" required className="w-full rounded-lg border p-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none bg-slate-50" />
               </div>
               <div className="space-y-1">
+                <label className="text-xs font-black uppercase tracking-widest text-slate-400">Account Password *</label>
+                <input name="password" type="password" required minLength={6} className="w-full rounded-lg border p-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none bg-slate-50" placeholder="Set a secure password" />
+              </div>
+              <div className="space-y-1">
                 <label className="text-xs font-black uppercase tracking-widest text-slate-400">Phone</label>
                 <input name="phone" className="w-full rounded-lg border p-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none bg-slate-50" />
               </div>
