@@ -15,6 +15,7 @@ import {
   UserCog,
   Microscope,
   Stethoscope,
+  PlusCircle,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -27,6 +28,7 @@ const navigations = {
   admin: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Live Queue", href: "/dashboard/queue", icon: Activity },
+    { name: "Book Appointment", href: "/dashboard/appointments/new", icon: PlusCircle },
     { name: "Appointments", href: "/dashboard/appointments", icon: Calendar },
     { name: "Patients", href: "/dashboard/patients", icon: Users },
     { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
@@ -46,6 +48,7 @@ const navigations = {
   receptionist: [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Live Queue", href: "/dashboard/queue", icon: Activity },
+    { name: "Book Appointment", href: "/dashboard/appointments/new", icon: PlusCircle },
     { name: "Appointments", href: "/dashboard/appointments", icon: Calendar },
     { name: "Register Patient", href: "/dashboard/patients/new", icon: Users },
     { name: "Billing", href: "/dashboard/billing", icon: CreditCard },
