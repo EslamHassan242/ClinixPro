@@ -32,7 +32,7 @@ const settingSections = [
     color: "bg-purple-500",
   },
   {
-    href: "/dashboard/settings/security",
+    href: "/dashboard/settings/security-access",
     icon: Shield,
     title: "Security & Access",
     description: "Manage roles, permissions, and two-factor authentication settings.",

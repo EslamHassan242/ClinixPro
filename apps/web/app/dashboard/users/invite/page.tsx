@@ -26,21 +26,26 @@ export default function InviteStaffPage() {
     setError("");
     const formData = new FormData(e.currentTarget);
     try {
+      console.log("Submitting staff invitation form...");
       const result = await createStaffMember(formData);
       
       if (result?.error) {
+        console.error("Server returned error:", result.error);
         setError(result.error);
         return;
       }
 
       if (result?.success && result.credentials) {
+        console.log("Staff member created successfully, redirecting...");
         const { email, password, fullName } = result.credentials;
         router.push(`/dashboard/users?created=1&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&name=${encodeURIComponent(fullName)}`);
       } else {
+        console.warn("Result success but no credentials found, fallback redirect.");
         router.push("/dashboard/users");
       }
     } catch (err: any) {
-      setError(err.message || "Something went wrong.");
+      console.error("Form submission fatal error:", err);
+      setError("A critical error occurred. This might be due to a server-side crash. Please try again or contact support.");
     } finally {
       setSaving(false);
     }

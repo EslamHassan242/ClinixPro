@@ -16,10 +16,15 @@ function generatePassword() {
 }
 
 export async function createStaffMember(formData: FormData) {
+    console.log("Starting staff creation process...");
     try {
         const adminProfile = await getUserProfile();
+        console.log("Admin profile verified:", adminProfile.id);
 
-        if (adminProfile.role !== "admin") throw new Error("Only admins can add staff members");
+        if (adminProfile.role !== "admin") {
+            console.error("Permission denied: user is not admin");
+            return { error: "Only admins can add staff members" };
+        }
 
         const fullName = formData.get("fullName") as string;
         const email = formData.get("email") as string;
@@ -28,7 +33,7 @@ export async function createStaffMember(formData: FormData) {
         const specialization = (formData.get("specialization") as string) || null;
 
         if (!fullName || !email || !role) {
-            throw new Error("Full name, email, and role are required");
+            return { error: "Full name, email, and role are required" };
         }
 
         // Check for duplicate email in this tenant
@@ -36,16 +41,18 @@ export async function createStaffMember(formData: FormData) {
             where: { email, tenantId: adminProfile.tenantId },
         });
         if (existing) {
-            throw new Error("A staff member with this email already exists");
+            return { error: "A staff member with this email already exists" };
         }
 
         const tempPassword = generatePassword();
 
         if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-            throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing in .env. Automated user creation requires the Service Role Key.");
+            console.error("CRITICAL: SUPABASE_SERVICE_ROLE_KEY is missing");
+            return { error: "Server configuration error. Please contact support." };
         }
 
         // Create real Supabase user account
+        console.log("Creating Supabase Auth user...");
         const supabaseAdmin = await createAdminClient();
         const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email: email,
@@ -57,9 +64,13 @@ export async function createStaffMember(formData: FormData) {
             }
         });
 
-        if (authError) throw authError;
+        if (authError) {
+            console.error("Supabase Auth Error:", authError);
+            return { error: authError.message };
+        }
 
         // Create DB profile linked to the Supabase user ID
+        console.log("Creating Database profile:", authUser.user.id);
         await prisma.profile.create({
             data: {
                 id: authUser.user.id,
@@ -72,6 +83,7 @@ export async function createStaffMember(formData: FormData) {
             },
         });
 
+        console.log("Staff member created successfully");
         // Return credentials to be handled by the client
         return {
             success: true,
@@ -82,8 +94,8 @@ export async function createStaffMember(formData: FormData) {
             }
         };
     } catch (error: any) {
-        console.error("Create staff error:", error);
-        return { error: error.message || "Failed to create staff member" };
+        console.error("EXHAUSTIVE STAFF CREATION ERROR:", error);
+        return { error: error.message || "An unexpected server error occurred during staff creation." };
     }
 }
 
