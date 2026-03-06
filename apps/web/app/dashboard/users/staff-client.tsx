@@ -137,11 +137,11 @@ export default function StaffClient({ staff }: { staff: any[] }) {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <div className="h-9 w-9 rounded-full bg-primary/10 text-primary flex items-center justify-center font-black text-sm">
-                        {member.fullName.substring(0, 2).toUpperCase()}
+                        {(member.fullName || "Staff Member").substring(0, 2).toUpperCase()}
                       </div>
                       <div>
-                        <p className="font-bold text-slate-700">{member.fullName}</p>
-                        <p className="text-[10px] text-slate-400">{member.email}</p>
+                        <p className="font-bold text-slate-700">{member.fullName || "Unnamed Staff"}</p>
+                        <p className="text-[10px] text-slate-400">{member.email || "No Email"}</p>
                       </div>
                     </div>
                   </td>

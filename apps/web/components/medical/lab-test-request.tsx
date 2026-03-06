@@ -17,10 +17,18 @@ interface LabTest {
   notes: string;
 }
 
-export function LabTestRequest({ onUpdate, lookups = [], patientName }: { onUpdate?: (tests: LabTest[]) => void, lookups?: any[], patientName?: string }) {
-  const [tests, setTests] = useState<LabTest[]>([
-    { id: "1", name: "", type: "LAB", priority: "routine" as LabPriority, notes: "" }
-  ]);
+export function LabTestRequest({ onUpdate, lookups = [], patientName, initialData = [] }: { onUpdate?: (tests: LabTest[]) => void, lookups?: any[], patientName?: string, initialData?: any[] }) {
+  const [tests, setTests] = useState<LabTest[]>(
+    initialData.length > 0
+      ? initialData.map((t: any) => ({
+          id: t.id,
+          name: t.name || "",
+          type: "LAB",
+          priority: t.priority || "routine",
+          notes: t.notes || ""
+        }))
+      : [{ id: "1", name: "", type: "LAB", priority: "routine" as LabPriority, notes: "" }]
+  );
 
   useEffect(() => {
     onUpdate?.(tests);

@@ -51,7 +51,56 @@ export async function createMedicalRecord(data: any) {
 
     revalidatePath(`/dashboard/patients/${data.patientId}`);
     revalidatePath("/dashboard/medical-records");
+    revalidatePath("/dashboard/queue");
+    revalidatePath("/dashboard");
     if (appointmentId) revalidatePath("/dashboard/appointments");
+    return record;
+}
+
+export async function updateMedicalRecord(id: string, data: any) {
+    const tenantId = await getTenantId();
+    const { prescriptions, labRequests, radiologyRequests, ...recordData } = data;
+
+    const record = await prisma.$transaction(async (tx) => {
+        // 1. Update the medical record
+        const updatedRecord = await tx.medicalRecord.update({
+            where: { id, tenantId },
+            data: {
+                ...recordData,
+                updatedAt: new Date(),
+            },
+        });
+
+        // 2. Handle prescriptions (Delete old ones and create new ones for simplicity in this MVP, 
+        // or more complex sync if needed. Let's do a simple sync: delete all linked and recreate)
+        await tx.prescription.deleteMany({ where: { medicalRecordId: id } });
+        if (prescriptions && prescriptions.length > 0) {
+            await tx.prescription.createMany({
+                data: prescriptions.map((p: any) => ({
+                    medicalRecordId: id,
+                    medicineName: p.medicineName || p.name,
+                    dosage: p.dosage,
+                    frequency: p.frequency,
+                    duration: p.duration,
+                    instructions: p.instructions,
+                    lookupId: p.lookupId,
+                })),
+            });
+        }
+
+        // 3. Handle lab/radiology requests (Syncing investigations)
+        // For simplicity, we'll keep existing ones and add new ones or update. 
+        // But usually, medical records are snapshots. If we edit, we update the note part.
+        // Let's just update the core record fields for now as requested for "adding details".
+
+        return updatedRecord;
+    });
+
+    revalidatePath(`/dashboard/patients/${data.patientId}`);
+    revalidatePath(`/dashboard/medical-records/${id}`);
+    revalidatePath("/dashboard/medical-records");
+    revalidatePath("/dashboard/queue");
+    revalidatePath("/dashboard");
     return record;
 }
 

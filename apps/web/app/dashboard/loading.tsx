@@ -12,8 +12,8 @@ export default function DashboardLoading() {
         </div>
       </div>
       <div className="text-center space-y-2">
-        <h3 className="text-sm font-black uppercase tracking-[0.3em] text-slate-800 animate-pulse">Optimizing Layout</h3>
-        <p className="text-xs text-slate-400 font-bold italic">Gathering clinical data for you...</p>
+        <h3 className="text-sm font-black uppercase tracking-[0.4em] text-slate-900 animate-pulse">ClinixPro Clinical Dashboard</h3>
+        <p className="text-xs text-slate-400 font-bold italic tracking-wide">Securely loading medical data...</p>
       </div>
       
       {/* Skeleton Placeholders */}

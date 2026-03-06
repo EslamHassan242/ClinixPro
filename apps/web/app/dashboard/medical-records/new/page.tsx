@@ -98,6 +98,12 @@ export default function NewMedicalRecordPage() {
   const onSubmit = async (data: any) => {
     if (!data.patientId) return toast.error("Please select a patient first.");
     
+    // Prevention of empty records
+    const isNoteEmpty = !data.subjective?.trim() && !data.assessment?.trim() && !data.plan?.trim() && !data.objective?.trim();
+    if (isNoteEmpty && (data.prescriptions?.length === 0) && (data.labRequests?.length === 0)) {
+       return toast.error("Clinical note is empty. Please add at least one clinical finding or prescription before finalizing.");
+    }
+
     setIsSubmitting(true);
     try {
       // Merge lab and radiology requests for the action

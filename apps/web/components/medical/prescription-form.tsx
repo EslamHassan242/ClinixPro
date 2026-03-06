@@ -14,10 +14,19 @@ interface Drug {
   instructions: string;
 }
 
-export function PrescriptionForm({ onUpdate, lookups = [] }: { onUpdate?: (drugs: Drug[]) => void, lookups?: any[] }) {
-  const [drugs, setDrugs] = useState<Drug[]>([
-    { id: "1", name: "", dosage: "", frequency: "", duration: "", instructions: "" }
-  ]);
+export function PrescriptionForm({ onUpdate, lookups = [], initialData = [] }: { onUpdate?: (drugs: Drug[]) => void, lookups?: any[], initialData?: any[] }) {
+  const [drugs, setDrugs] = useState<Drug[]>(
+    initialData.length > 0 
+      ? initialData.map((d: any) => ({
+          id: d.id,
+          name: d.medicineName || d.name || "",
+          dosage: d.dosage || "",
+          frequency: d.frequency || "",
+          duration: d.duration || "",
+          instructions: d.instructions || ""
+        }))
+      : [{ id: "1", name: "", dosage: "", frequency: "", duration: "", instructions: "" }]
+  );
 
   useEffect(() => {
     // Notify parent of initial state on mount

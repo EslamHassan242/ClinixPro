@@ -16,10 +16,19 @@ interface RadiologyTest {
   notes: string;
 }
 
-export function RadiologyRequest({ onUpdate, lookups = [], patientName }: { onUpdate?: (tests: RadiologyTest[]) => void, lookups?: any[], patientName?: string }) {
-  const [tests, setTests] = useState<RadiologyTest[]>([
-    { id: "1", name: "", type: "RADIOLOGY", priority: "routine" as LabPriority, targetOrgan: "", notes: "" }
-  ]);
+export function RadiologyRequest({ onUpdate, lookups = [], patientName, initialData = [] }: { onUpdate?: (tests: RadiologyTest[]) => void, lookups?: any[], patientName?: string, initialData?: any[] }) {
+  const [tests, setTests] = useState<RadiologyTest[]>(
+    initialData.length > 0
+      ? initialData.map((t: any) => ({
+          id: t.id,
+          name: t.name || "",
+          type: "RADIOLOGY",
+          priority: t.priority || "routine",
+          targetOrgan: t.targetOrgan || "",
+          notes: t.notes || ""
+        }))
+      : [{ id: "1", name: "", type: "RADIOLOGY", priority: "routine" as LabPriority, targetOrgan: "", notes: "" }]
+  );
 
   useEffect(() => {
     onUpdate?.(tests);

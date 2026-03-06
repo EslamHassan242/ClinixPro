@@ -16,7 +16,8 @@ import {
   Camera,
   UserCheck,
   ClipboardCheck,
-  ArrowUpCircle
+  ArrowUpCircle,
+  Pencil
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -202,14 +203,20 @@ function MedicalHistoryTab({ records }: { records: any[] }) {
                                       </div>
                                    </div>
                                 </div>
-                                <div className="flex items-center justify-end">
-                                   <Link 
-                                     href={`/dashboard/medical-records/${record.id}`}
-                                     className="inline-flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:brightness-110 shadow-lg transition-all active:scale-95"
-                                   >
-                                      View & Print Card
-                                   </Link>
-                                </div>
+                                 <div className="flex items-center justify-end gap-3">
+                                    <Link 
+                                      href={`/dashboard/medical-records/${record.id}/edit`}
+                                      className="inline-flex items-center gap-2 px-4 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all active:scale-95 shadow-sm"
+                                    >
+                                       <Pencil className="h-3 w-3" /> Edit Note
+                                    </Link>
+                                    <Link 
+                                      href={`/dashboard/medical-records/${record.id}`}
+                                      className="inline-flex items-center gap-2 px-8 py-3 bg-slate-900 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:brightness-110 shadow-lg transition-all active:scale-95"
+                                    >
+                                       View & Print Card
+                                    </Link>
+                                 </div>
                              </div>
                           </CardContent>
                        </Card>
