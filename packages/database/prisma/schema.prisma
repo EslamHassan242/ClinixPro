@@ -50,7 +50,7 @@ model Tenant {
 // Extended user profiles (linked to Clerk)
 model Profile {
   id             String   @id @default(uuid())
-  clerkId        String   // Identity link
+  clerkId        String?   // Identity link
   tenantId       String
   role           String // admin, doctor, nurse, receptionist, lab_tech
   fullName       String
@@ -70,7 +70,7 @@ model Profile {
   doctorServices     DoctorService[]
   auditLogs          AuditLog[]
 
-  @@unique([clerkId, tenantId])
+  @@unique([clerkId, tenantId], name: "clerkId_tenantId")
   @@unique([tenantId, email])
   @@unique([id, tenantId])
   @@index([tenantId])
@@ -224,7 +224,7 @@ model Lookup {
 // Structured Prescriptions
 model Prescription {
   id              String   @id @default(uuid())
-  tenantId        String // Added for RLS
+  tenantId        String? // Added for RLS
   medicalRecordId String
   lookupId        String? // Optional link to master medicine
   medicineName    String // Fallback or custom name
@@ -235,7 +235,7 @@ model Prescription {
   createdAt       DateTime @default(now())
 
   // Relations
-  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant        Tenant?        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
   lookup        Lookup?       @relation(fields: [lookupId], references: [id])
 
@@ -247,7 +247,7 @@ model Prescription {
 // Lab Investigations
 model LabInvestigation {
   id              String   @id @default(uuid())
-  tenantId        String // Added for RLS
+  tenantId        String? // Added for RLS
   medicalRecordId String
   lookupId        String? // Link to master investigation catalog
   testName        String
@@ -262,7 +262,7 @@ model LabInvestigation {
   updatedAt       DateTime @updatedAt
 
   // Relations
-  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant        Tenant?        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   medicalRecord MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade)
 
   @@unique([id, tenantId])

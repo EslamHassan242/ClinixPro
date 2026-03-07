@@ -12,10 +12,25 @@ export default async function Home() {
     }
 
     // Check if user already has a clinic profile (Absolute Source of Truth)
-    const profile = await prisma.profile.findFirst({
+    let profile = await prisma.profile.findFirst({
         where: { clerkId: user.id },
-        select: { tenantId: true },
+        select: { id: true, tenantId: true },
     });
+
+    // Fallback: Link existing profiles by email if clerkId is missing
+    if (!profile && user.email) {
+        profile = await prisma.profile.findFirst({
+            where: { email: user.email, clerkId: null },
+            select: { id: true, tenantId: true },
+        });
+
+        if (profile) {
+            await prisma.profile.update({
+                where: { id: profile.id },
+                data: { clerkId: user.id },
+            });
+        }
+    }
 
     if (profile?.tenantId) {
         console.log(`[Root] User ${user.id} has profile, redirecting to /dashboard`);

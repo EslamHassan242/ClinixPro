@@ -91,10 +91,26 @@ export async function checkOnboardingStatus() {
 
     if (!user) return null;
 
-    const profile = await prisma.profile.findFirst({
+    let profile = await prisma.profile.findFirst({
         where: { clerkId: user.id },
         include: { tenant: true },
     });
+
+    // Fallback: Link existing profiles by email if clerkId is missing
+    if (!profile && user.email) {
+        const existingProfile = await prisma.profile.findFirst({
+            where: { email: user.email, clerkId: null },
+            select: { id: true },
+        });
+
+        if (existingProfile) {
+            profile = await prisma.profile.update({
+                where: { id: existingProfile.id },
+                data: { clerkId: user.id },
+                include: { tenant: true },
+            });
+        }
+    }
 
     return profile;
 }

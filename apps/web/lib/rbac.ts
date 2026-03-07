@@ -14,10 +14,26 @@ export async function hasRole(allowedRoles: UserRole[]): Promise<boolean> {
 
     const tenantId = await getTenantId();
 
-    const profile = await prisma.profile.findUnique({
+    let profile = await prisma.profile.findUnique({
         where: { clerkId_tenantId: { clerkId: user.id, tenantId } },
         select: { role: true }
     });
+
+    // Fallback: Link existing profiles by email if clerkId is missing
+    if (!profile && user.email) {
+        const existingProfile = await prisma.profile.findFirst({
+            where: { email: user.email, tenantId, clerkId: null },
+            select: { id: true, role: true }
+        });
+
+        if (existingProfile) {
+            await prisma.profile.update({
+                where: { id: existingProfile.id },
+                data: { clerkId: user.id }
+            });
+            return allowedRoles.includes(existingProfile.role as UserRole);
+        }
+    }
 
     if (!profile) return false;
     return allowedRoles.includes(profile.role as UserRole);

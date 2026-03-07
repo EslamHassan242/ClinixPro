@@ -15,9 +15,24 @@ export async function recordAuditLog(data: {
     const user = await getSessionUser();
 
     // Get clinical profile ID
-    const profile = await prisma.profile.findUnique({
+    let profile = await prisma.profile.findUnique({
         where: { clerkId_tenantId: { clerkId: user.id, tenantId } }
     });
+
+    // Fallback: Link existing profiles by email if clerkId is missing
+    if (!profile && user.email) {
+        const existingProfile = await prisma.profile.findFirst({
+            where: { email: user.email, tenantId, clerkId: null },
+            select: { id: true }
+        });
+
+        if (existingProfile) {
+            profile = await prisma.profile.update({
+                where: { id: existingProfile.id },
+                data: { clerkId: user.id }
+            });
+        }
+    }
 
     return prisma.auditLog.create({
         data: {
