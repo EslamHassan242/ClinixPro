@@ -44,6 +44,7 @@ model Tenant {
   diagnoses         Diagnosis[]
   vitalSigns        VitalSigns[]
   features          ClinicFeature[]
+  insuranceClaims   InsuranceClaim[]
 }
 
 // Extended user profiles (linked to Clerk)
