@@ -11,7 +11,7 @@ export default async function QueuePage() {
         <p className="text-slate-500 font-medium italic">Real-time status of patients currently in the clinic.</p>
       </div>
 
-      <QueueManager role={profile.role as any} />
+      <QueueManager role={profile.role as any} tenantId={profile.tenantId} />
     </div>
   );
 }

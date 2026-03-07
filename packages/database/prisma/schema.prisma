@@ -111,6 +111,7 @@ model Patient {
   medicalRecords MedicalRecord[]
   invoices       Invoice[]
   queueTickets   QueueTicket[]
+  insuranceClaims InsuranceClaim[]
 
   @@unique([tenantId, phone])
   @@unique([id, tenantId])
@@ -118,6 +119,7 @@ model Patient {
   @@index([mrn])
   @@index([tenantId, fullName])
   @@index([tenantId, phone])
+  @@index([tenantId, mrn])
 }
 
 // Appointments
@@ -154,6 +156,7 @@ model Appointment {
   @@index([tenantId, appointmentDate])
   @@index([doctorId, appointmentDate])
   @@index([patientId])
+  @@index([tenantId, doctorId, startTime])
 }
 
 // Medical Records
@@ -183,6 +186,8 @@ model MedicalRecord {
   deletedBy      String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  archivedAt     DateTime? // Data Lifecycle (Phase F5)
+  isArchived     Boolean   @default(false)
 
   // Relations
   tenant      Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -279,10 +284,13 @@ model Invoice {
   discount      Float     @default(0)
   total         Float
   paidAmount    Float     @default(0)
+  balance       Float     @default(0) // Data Maturity (Phase G2)
   status        String // draft, sent, partially_paid, paid, overdue, cancelled
+  adjustmentAmount Float   @default(0) // Adjustments/Refunds (Phase G2)
   paymentMethod String? // cash, card, insurance, bank_transfer
   paymentDate   DateTime?
   notes         String?
+  insuranceClaimId String? // (Phase G2)
   deletedAt     DateTime? // Soft delete
   deletedBy     String?
   createdAt     DateTime  @default(now())
@@ -293,12 +301,14 @@ model Invoice {
   patient     Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
   appointment Appointment? @relation(fields: [appointmentId], references: [id])
   payments    Payment[]
+  insuranceClaim InsuranceClaim? @relation(fields: [insuranceClaimId], references: [id])
 
   @@unique([id, tenantId])
   @@index([tenantId, issueDate(sort: Desc)])
   @@index([tenantId, status])
   @@index([patientId])
   @@index([invoiceNumber])
+  @@index([tenantId, createdAt(sort: Desc)])
 }
 
 // Services (clinic's service catalog)
@@ -416,6 +426,7 @@ model QueueTicket {
   @@unique([id, tenantId])
   @@index([tenantId, status])
   @@index([tenantId, registeredAt])
+  @@index([tenantId, status, registeredAt])
 }
 
 // Normalized Financials
@@ -425,6 +436,7 @@ model Payment {
   invoiceId            String
   amount               Float
   method               String // cash, card, insurance, bank_transfer
+  type                 String   @default("payment") // payment, refund, adjustment (Phase G2)
   status               String // pending, completed, failed, refunded
   transactionReference String?
   paidAt               DateTime @default(now())
@@ -451,6 +463,32 @@ model Diagnosis {
 
   @@unique([id, tenantId])
   @@index([medicalRecordId])
+}
+
+// Insurance Claims (Phase G2)
+model InsuranceClaim {
+  id              String   @id @default(uuid())
+  tenantId        String
+  patientId       String
+  insurerName     String
+  policyNumber    String
+  claimNumber     String?
+  status          String // pending, submitted, approved, rejected, paid
+  amountClaimed   Float
+  amountApproved  Float?
+  submittedAt     DateTime @default(now())
+  processedAt     DateTime?
+  notes           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  patient Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
+
+  @@unique([id, tenantId])
+  @@index([tenantId, status])
+  @@index([patientId])
 }
 
 model VitalSigns {

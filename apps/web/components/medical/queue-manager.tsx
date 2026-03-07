@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getActiveQueue, updateAppointmentStatus } from "@/app/actions/appointments";
+import { useQueueRealtime } from "@/hooks/use-queue-realtime";
 import { toast } from "sonner";
 
 interface QueueItem {
@@ -36,7 +37,7 @@ interface QueueItem {
   updatedAt: Date;
 }
 
-export function QueueManager({ role }: { role: "doctor" | "receptionist" | "admin" }) {
+export function QueueManager({ role, tenantId }: { role: "doctor" | "receptionist" | "admin", tenantId: string }) {
   const router = useRouter();
   const [queue, setQueue] = useState<QueueItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,9 +55,16 @@ export function QueueManager({ role }: { role: "doctor" | "receptionist" | "admi
 
   useEffect(() => {
     fetchQueue();
-    const interval = setInterval(fetchQueue, 10000); // Poll every 10s for "real-time" feel
-    return () => clearInterval(interval);
   }, []);
+
+  // Real-time synchronization (Phase F2)
+  useQueueRealtime({
+      tenantId,
+      onUpdate: () => {
+          console.log("Queue Update Triggered");
+          fetchQueue();
+      }
+  });
 
   const handleStatusChange = async (id: string, newStatus: string, patientId?: string) => {
     try {

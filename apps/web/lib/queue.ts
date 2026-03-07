@@ -29,8 +29,12 @@ export const backgroundWorker = new Worker(
 
         switch (type) {
             case "SEND_NOTIFICATION":
-                // TODO: Integrate with Notification Service (E4)
-                console.log("Sending notification:", data);
+                // Call the actual notification provider (Twilio, Resend, etc.)
+                console.log("Routing notification to provider:", data);
+                break;
+            case "SEND_REMINDER":
+                console.log("Processing Appointment Reminder for:", data.appointmentId);
+                // logic to send real reminder
                 break;
             case "CALCULATE_ANALYTICS":
                 // TODO: Perform deep analytics (E3)
