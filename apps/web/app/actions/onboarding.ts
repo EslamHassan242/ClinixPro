@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { prisma } from "@clinixpro/database";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -61,16 +61,28 @@ export async function onboardClinic(formData: FormData) {
                 },
             });
 
-            return { tenant, profile };
-        });
+            return { tenant, profile }; // Return tenant and profile from the transaction
+        }); // End Prisma transaction
+
+        // 3. Update Supabase User Metadata (JWT Claims)
+        const adminClient = await createAdminClient();
+        const { error: updateError } = await adminClient.auth.admin.updateUserById(
+            user.id,
+            { app_metadata: { tenant_id: result.tenant.id } }
+        );
+
+        if (updateError) {
+            console.error("Failed to sync tenantId to JWT claims:", updateError);
+            // We don't block the whole process, but log it
+        }
 
         console.log("Clinic onboarded:", result);
+
+        redirect("/dashboard");
     } catch (error) {
         console.error("Onboarding error:", error);
         return { error: { _form: ["Something went wrong during onboarding"] } };
     }
-
-    redirect("/dashboard");
 }
 
 export async function checkOnboardingStatus() {

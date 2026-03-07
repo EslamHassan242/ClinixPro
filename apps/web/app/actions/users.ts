@@ -62,6 +62,9 @@ export async function createStaffMember(formData: FormData) {
             user_metadata: {
                 full_name: fullName,
                 role: role,
+            },
+            app_metadata: {
+                tenant_id: adminProfile.tenantId, // Critical for RLS
             }
         });
 

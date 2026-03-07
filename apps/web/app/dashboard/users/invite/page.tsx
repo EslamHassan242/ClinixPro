@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ArrowLeft, Mail, UserPlus, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { createStaffMember } from "@/app/actions/users";
+import CredentialsBanner from "../credentials-banner";
 
 const roles = [
   { value: "doctor", label: "Doctor", description: "Can view and treat patients, access full EMR" },
@@ -19,6 +20,7 @@ export default function InviteStaffPage() {
   const [role, setRole] = useState("doctor");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [successData, setSuccessData] = useState<{ email: string; password: string; fullName: string } | null>(null);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -36,11 +38,11 @@ export default function InviteStaffPage() {
       }
 
       if (result?.success && result.credentials) {
-        console.log("Staff member created successfully, redirecting...");
-        const { email, password, fullName } = result.credentials;
-        router.push(`/dashboard/users?created=1&email=${encodeURIComponent(email)}&password=${encodeURIComponent(password)}&name=${encodeURIComponent(fullName)}`);
+        console.log("Staff member created successfully");
+        setSuccessData(result.credentials);
+        // We don't redirect, we show the credentials on-page securely
       } else {
-        console.warn("Result success but no credentials found, fallback redirect.");
+        console.warn("Result success but no credentials found, redirecting.");
         router.push("/dashboard/users");
       }
     } catch (err: any) {
@@ -69,10 +71,28 @@ export default function InviteStaffPage() {
           <CardDescription>Fill in the profile details to add a staff member directly.</CardDescription>
         </CardHeader>
         <CardContent>
-          {error && (
-            <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-100 text-xs text-red-600 font-bold">{error}</div>
-          )}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          {successData ? (
+            <div className="space-y-6">
+              <CredentialsBanner 
+                name={successData.fullName}
+                email={successData.email}
+                password={successData.password}
+              />
+              <div className="flex justify-center pt-4">
+                <Link 
+                  href="/dashboard/users"
+                  className="px-8 py-3 bg-slate-800 text-white rounded-xl text-sm font-black uppercase tracking-widest hover:bg-slate-700 transition-all shadow-lg shadow-slate-200"
+                >
+                  Done, Return to Staff List
+                </Link>
+              </div>
+            </div>
+          ) : (
+            <>
+              {error && (
+                <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-100 text-xs text-red-600 font-bold">{error}</div>
+              )}
+              <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-1">
                 <label className="text-xs font-black uppercase tracking-widest text-slate-400">Full Name *</label>
@@ -131,6 +151,8 @@ export default function InviteStaffPage() {
               </button>
             </div>
           </form>
+          </>
+          )}
         </CardContent>
       </Card>
     </div>

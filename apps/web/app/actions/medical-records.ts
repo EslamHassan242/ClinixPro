@@ -3,12 +3,13 @@
 import { prisma } from "@clinixpro/database";
 import { revalidatePath } from "next/cache";
 import { getTenantId } from "@/lib/auth-utils";
+import { recordAuditLog } from "@/lib/audit";
 
 export async function createMedicalRecord(data: any) {
     const tenantId = await getTenantId();
-    const { prescriptions, labRequests, radiologyRequests, appointmentId, ...recordData } = data;
+    const { prescriptions, labRequests, radiologyRequests, appointmentId, diagnoses, vitalSigns, ...recordData } = data;
 
-    const record = await prisma.$transaction(async (tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0]) => {
+    const record = await prisma.$transaction(async (tx) => {
         // 1. Create the medical record
         const newRecord = await tx.medicalRecord.create({
             data: {
@@ -24,6 +25,7 @@ export async function createMedicalRecord(data: any) {
                         duration: p.duration,
                         instructions: p.instructions,
                         lookupId: p.lookupId,
+                        tenantId: tenantId,
                     })),
                 },
                 labRequests: {
@@ -33,8 +35,23 @@ export async function createMedicalRecord(data: any) {
                         targetOrgan: l.targetOrgan,
                         priority: l.priority,
                         notes: l.notes,
+                        tenantId: tenantId,
                     })),
                 },
+                diagnoses: {
+                    create: (diagnoses || []).map((d: any) => ({
+                        description: d.description,
+                        icd10Code: d.icd10Code,
+                        isMain: d.isMain || false,
+                        tenantId: tenantId,
+                    })),
+                },
+                vitalSigns: vitalSigns ? {
+                    create: {
+                        ...vitalSigns,
+                        tenantId: tenantId,
+                    }
+                } : undefined,
             },
         });
 
@@ -59,7 +76,7 @@ export async function createMedicalRecord(data: any) {
 
 export async function updateMedicalRecord(id: string, data: any) {
     const tenantId = await getTenantId();
-    const { prescriptions, labRequests, radiologyRequests, ...recordData } = data;
+    const { prescriptions, labRequests, radiologyRequests, diagnoses, vitalSigns, ...recordData } = data;
 
     const record = await prisma.$transaction(async (tx) => {
         // 1. Update the medical record
@@ -71,8 +88,7 @@ export async function updateMedicalRecord(id: string, data: any) {
             },
         });
 
-        // 2. Handle prescriptions (Delete old ones and create new ones for simplicity in this MVP, 
-        // or more complex sync if needed. Let's do a simple sync: delete all linked and recreate)
+        // 2. Handle prescriptions (Sync)
         await tx.prescription.deleteMany({ where: { medicalRecordId: id } });
         if (prescriptions && prescriptions.length > 0) {
             await tx.prescription.createMany({
@@ -84,14 +100,37 @@ export async function updateMedicalRecord(id: string, data: any) {
                     duration: p.duration,
                     instructions: p.instructions,
                     lookupId: p.lookupId,
+                    tenantId: tenantId,
                 })),
             });
         }
 
-        // 3. Handle lab/radiology requests (Syncing investigations)
-        // For simplicity, we'll keep existing ones and add new ones or update. 
-        // But usually, medical records are snapshots. If we edit, we update the note part.
-        // Let's just update the core record fields for now as requested for "adding details".
+        // 3. Handle Diagnoses (Sync)
+        await tx.diagnosis.deleteMany({ where: { medicalRecordId: id } });
+        if (diagnoses && diagnoses.length > 0) {
+            await tx.diagnosis.createMany({
+                data: diagnoses.map((d: any) => ({
+                    medicalRecordId: id,
+                    description: d.description,
+                    icd10Code: d.icd10Code,
+                    isMain: d.isMain || false,
+                    tenantId: tenantId,
+                })),
+            });
+        }
+
+        // 4. Handle Vital Signs (Upsert)
+        if (vitalSigns) {
+            await tx.vitalSigns.upsert({
+                where: { medicalRecordId: id },
+                update: { ...vitalSigns },
+                create: {
+                    ...vitalSigns,
+                    medicalRecordId: id,
+                    tenantId: tenantId,
+                },
+            });
+        }
 
         return updatedRecord;
     });
@@ -111,12 +150,15 @@ export async function getMedicalRecords(patientId?: string) {
         where: {
             tenantId,
             patientId: patientId || undefined,
+            deletedAt: null
         },
         include: {
             patient: true,
             doctor: true,
             prescriptions: true,
             labRequests: true,
+            diagnoses: true,
+            vitalSigns: true,
         },
         orderBy: { visitDate: "desc" },
     });
@@ -135,6 +177,8 @@ export async function getMedicalRecordById(id: string) {
             doctor: true,
             prescriptions: true,
             labRequests: true,
+            diagnoses: true,
+            vitalSigns: true,
         },
     });
 }
@@ -143,7 +187,7 @@ export async function updateInvestigationResult(id: string, result: string, resu
     const tenantId = await getTenantId();
 
     const updated = await prisma.labInvestigation.update({
-        where: { id },
+        where: { id, tenantId },
         data: {
             results: result,
             resultImageUrls: resultImageUrls,

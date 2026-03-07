@@ -13,10 +13,14 @@ import {
   XCircle, 
   User, 
   Calendar as CalendarIcon,
-  Stethoscope
+  Stethoscope,
+  Ticket
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { toast } from "sonner";
+import { checkInAppointment } from "@/app/actions/appointments";
+import { useRouter } from "next/navigation";
 
 interface AppointmentTableClientProps {
   initialAppointments: any[];
@@ -24,6 +28,7 @@ interface AppointmentTableClientProps {
 }
 
 export function AppointmentTableClient({ initialAppointments, doctors }: AppointmentTableClientProps) {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDoctor, setSelectedDoctor] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -171,14 +176,18 @@ export function AppointmentTableClient({ initialAppointments, doctors }: Appoint
                           {app.status === 'scheduled' && (
                              <button 
                                onClick={async () => {
-                                  const { updateAppointmentStatus } = await import("@/app/actions/appointments");
-                                  await updateAppointmentStatus(app.id, 'waiting');
-                                  window.location.reload();
+                                  try {
+                                    await checkInAppointment(app.id);
+                                    toast.success("Patient checked in and added to queue");
+                                    router.refresh();
+                                  } catch (error: any) {
+                                    toast.error(error.message || "Check-in failed");
+                                  }
                                }}
                                className="p-2 hover:bg-emerald-50 rounded-xl text-slate-400 hover:text-emerald-600 transition-all shadow-sm border border-transparent hover:border-emerald-100"
-                               title="Arrived"
+                               title="Check-in Patient"
                              >
-                                <CheckCircle2 className="h-4 w-4" />
+                                <Ticket className="h-4 w-4" />
                              </button>
                           )}
                        </div>

@@ -11,8 +11,8 @@ export async function getSessionUser() {
 export async function getTenantId() {
     const user = await getSessionUser();
 
-    const profile = await prisma.profile.findUnique({
-        where: { id: user.id },
+    const profile = await prisma.profile.findFirst({
+        where: { clerkId: user.id },
         select: { tenantId: true },
     });
 
@@ -23,8 +23,8 @@ export async function getTenantId() {
 export async function getUserProfile() {
     const user = await getSessionUser();
 
-    const profile = await prisma.profile.findUnique({
-        where: { id: user.id },
+    const profile = await prisma.profile.findFirst({
+        where: { clerkId: user.id },
         include: { tenant: true },
     });
 

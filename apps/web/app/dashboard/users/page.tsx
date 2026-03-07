@@ -25,23 +25,11 @@ async function getStaffMembers() {
   return staff;
 }
 
-export default async function UsersPage(props: {
-  searchParams: Promise<{ created?: string; email?: string; password?: string; name?: string }>;
-}) {
-  const searchParams = await props.searchParams;
+export default async function UsersPage() {
   const staff = await getStaffMembers();
-  const justCreated = searchParams.created === "1";
 
   return (
     <div className="space-y-6 pb-12">
-      {/* Credentials Banner — shown right after a staff account is created */}
-      {justCreated && searchParams.email && searchParams.password && (
-        <CredentialsBanner
-          name={decodeURIComponent(searchParams.name || "")}
-          email={decodeURIComponent(searchParams.email)}
-          password={decodeURIComponent(searchParams.password)}
-        />
-      )}
 
       <div className="flex items-center justify-between">
         <div>

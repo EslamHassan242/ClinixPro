@@ -13,10 +13,14 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { getDashboardStats } from "@/app/actions/dashboard";
+import { getOperationalAnalytics } from "@/app/actions/analytics";
 import { cn } from "@/lib/utils";
 
 export default async function DashboardPage() {
-  const stats = await getDashboardStats();
+  const [stats, operational] = await Promise.all([
+    getDashboardStats(),
+    getOperationalAnalytics()
+  ]);
 
   return (
     <div className="space-y-8 pb-12">
@@ -39,9 +43,9 @@ export default async function DashboardPage() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <StatCard title="Total Patients" value={stats.patientCount.toLocaleString()} icon={Users} footer="+12% this month" color="bg-blue-500" />
-        <StatCard title="Active Appointments" value={stats.appointmentCount.toLocaleString()} icon={Calendar} footer="Scheduled for today" color="bg-emerald-500" />
+        <StatCard title="Avg. Wait Time" value={`${Math.round(operational.avgWaitTime)} min`} icon={Clock} footer="Registration to Call" color="bg-amber-500" />
         <StatCard title="Total Revenue" value={`$${stats.revenue.toLocaleString()}`} icon={CreditCard} footer="Gross collections" color="bg-primary" />
-        <StatCard title="Invoices Issued" value="128" icon={FileText} footer="Last 30 days" color="bg-secondary" />
+        <StatCard title="Monthly Load" value={operational.totalPatients.toString()} icon={Activity} footer="Patients completed" color="bg-secondary" />
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
