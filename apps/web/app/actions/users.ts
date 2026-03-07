@@ -78,6 +78,7 @@ export async function createStaffMember(formData: FormData) {
         await prisma.profile.create({
             data: {
                 id: authUser.user.id,
+                clerkId: authUser.user.id, // Set clerkId for identity lookups
                 tenantId: adminProfile.tenantId,
                 role: role as any,
                 fullName,

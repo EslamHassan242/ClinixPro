@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { prisma } from "@clinixpro/database";
+import { getUserProfile } from "@/lib/auth-utils";
 import OnboardingForm from "./form";
 
 export default async function OnboardingPage() {
@@ -11,13 +12,14 @@ export default async function OnboardingPage() {
     if (!user) redirect("/login");
 
     // Already onboarded → go straight to dashboard
-    const profile = await prisma.profile.findFirst({
-        where: { clerkId: user.id },
-        select: { tenantId: true },
-    });
-
-    if (profile?.tenantId) {
-        redirect("/dashboard");
+    try {
+        const profile = await getUserProfile();
+        if (profile?.tenantId) {
+            return redirect("/dashboard");
+        }
+    } catch (error) {
+        // Not onboarded yet or other error, stay on this page
+        console.log("[Onboarding] No profile found, proceeding with onboarding form");
     }
 
     return <OnboardingForm />;

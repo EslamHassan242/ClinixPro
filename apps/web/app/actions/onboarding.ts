@@ -2,6 +2,7 @@
 
 import { createClient, createAdminClient } from "@/lib/supabase/server";
 import { prisma } from "@clinixpro/database";
+import { getUserProfile } from "@/lib/auth-utils";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 
@@ -86,31 +87,9 @@ export async function onboardClinic(formData: FormData) {
 }
 
 export async function checkOnboardingStatus() {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-
-    if (!user) return null;
-
-    let profile = await prisma.profile.findFirst({
-        where: { clerkId: user.id },
-        include: { tenant: true },
-    });
-
-    // Fallback: Link existing profiles by email if clerkId is missing
-    if (!profile && user.email) {
-        const existingProfile = await prisma.profile.findFirst({
-            where: { email: user.email, clerkId: null },
-            select: { id: true },
-        });
-
-        if (existingProfile) {
-            profile = await prisma.profile.update({
-                where: { id: existingProfile.id },
-                data: { clerkId: user.id },
-                include: { tenant: true },
-            });
-        }
+    try {
+        return await getUserProfile();
+    } catch (error) {
+        return null;
     }
-
-    return profile;
 }
