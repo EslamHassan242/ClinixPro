@@ -9,8 +9,8 @@ export async function getPostLoginRedirect() {
 
     if (!user) return "/login";
 
-    const profile = await prisma.profile.findUnique({
-        where: { id: user.id },
+    const profile = await prisma.profile.findFirst({
+        where: { clerkId: user.id },
         select: { id: true },
     });
 

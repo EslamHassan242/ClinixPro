@@ -9,7 +9,7 @@ import { recordAuditLog } from "@/lib/audit";
 export async function getPatients(query?: string) {
     const tenantId = await getTenantId();
 
-    const patients = await prisma.patient.findMany({
+    return prisma.patient.findMany({
         where: {
             tenantId,
             deletedAt: null,

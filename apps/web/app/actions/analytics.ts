@@ -68,7 +68,7 @@ export async function getOperationalAnalytics() {
         }
     });
 
-    if (tickets.length === 0) return { avgWaitTime: 0, avgConsultationTime: 0 };
+    if (tickets.length === 0) return { avgWaitTime: 0, avgConsultationTime: 0, totalPatients: 0 };
 
     let totalWaitTime = 0; // Registration to Called
     let totalConsultationTime = 0; // Started to Completed

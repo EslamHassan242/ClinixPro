@@ -12,8 +12,8 @@ export default async function Home() {
     }
 
     // Check if user already has a clinic profile (Absolute Source of Truth)
-    const profile = await prisma.profile.findUnique({
-        where: { id: user.id },
+    const profile = await prisma.profile.findFirst({
+        where: { clerkId: user.id },
         select: { tenantId: true },
     });
 

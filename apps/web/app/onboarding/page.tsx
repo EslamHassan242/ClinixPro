@@ -11,8 +11,8 @@ export default async function OnboardingPage() {
     if (!user) redirect("/login");
 
     // Already onboarded → go straight to dashboard
-    const profile = await prisma.profile.findUnique({
-        where: { id: user.id },
+    const profile = await prisma.profile.findFirst({
+        where: { clerkId: user.id },
         select: { tenantId: true },
     });
 

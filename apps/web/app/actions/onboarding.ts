@@ -53,7 +53,7 @@ export async function onboardClinic(formData: FormData) {
 
             const profile = await tx.profile.create({
                 data: {
-                    id: user.id,
+                    clerkId: user.id,
                     tenantId: tenant.id,
                     role: "admin",
                     email: user.email!,
@@ -91,8 +91,8 @@ export async function checkOnboardingStatus() {
 
     if (!user) return null;
 
-    const profile = await prisma.profile.findUnique({
-        where: { id: user.id },
+    const profile = await prisma.profile.findFirst({
+        where: { clerkId: user.id },
         include: { tenant: true },
     });
 
